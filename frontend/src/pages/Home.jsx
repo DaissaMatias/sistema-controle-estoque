@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 
 export default function Home() {
     const [produtos, setProdutos] = useState([]);
-    const [carregando, setCarrengando] = useState(true);
+    const [carregando, setCarregando] = useState(true);
     const navigate = useNavigate();
 
     //Busca os produtos na API assim que a tela carrega
@@ -19,9 +19,8 @@ export default function Home() {
             setProdutos(resposta.data);
         } catch (erro) {
             console.error("Erro ao buscar produtos:", erro);
-            alert("Erro ao conectar com a API. Certifique-se que o backend está rodando!");
         } finally {
-            setCarrengando(false);
+            setCarregando(false);
         }
     };
 
@@ -101,35 +100,38 @@ const styles = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '20px'
+    marginBottom: '24px'
   },
   title: {
     margin: 0,
-    color: '#1a202c',
-    fontSize: '1.8rem'
+    color: 'var(--texto-preto)',
+    fontSize: '1.75rem',
+    fontFamily: 'var(--font-corpo)',
+    fontWeight: '700'
   },
   subtext: {
-    margin: '5px 0 0 0',
-    color: '#718096',
+    margin: '4px 0 0 0',
+    color: 'var(--placeholder-grafite)',
     fontSize: '0.9rem'
   },
   btnNovo: {
-    backgroundColor: '#1B85CC',
+    backgroundColor: 'var(--azul-claro)',
     color: '#ffffff',
     border: 'none',
     padding: '12px 24px',
     borderRadius: '6px',
-    fontSize: '1rem',
+    fontSize: '0.95rem',
+    fontFamily:'var(--font-header-btn)',
     fontWeight: 'bold',
     cursor: 'pointer',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+    letterSpacing:'0.5px',
   },
   cardVazio: {
     backgroundColor: '#ffffff',
     padding: '40px',
     borderRadius: '8px',
     textAlign: 'center',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+    border: '1px solid var(--input-bg)'
   },
   table: {
     width: '100%',
@@ -137,45 +139,47 @@ const styles = {
     backgroundColor: '#ffffff',
     borderRadius: '8px',
     overflow: 'hidden',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+    border:'1px solid var(--input-bg)'
   },
   trHeader: {
-    backgroundColor: '#edf2f7',
-    borderBottom: '2px solid #e2e8f0'
+    backgroundColor: 'var(--azul-medio)',
+    color:'#ffffff',
+    borderBottom: '2px solid #e2e8f0',
   },
   th: {
-    padding: '15px',
+    padding: '16px',
     textAlign: 'left',
     fontSize: '0.85rem',
-    color: '#4a5568',
-    fontWeight: 'bold'
+    fontFamily: 'var(--font-header-btn)',
+    letterSpacing: '0.5px',
   },
   thCenter: {
-    padding: '15px',
+    padding: '16px',
     textAlign: 'center',
     fontSize: '0.85rem',
-    color: '#4a5568',
-    fontWeight: 'bold'
+    fontFamily: 'var(--font-header-btn)',
+    letterSpacing: '0.5px',
   },
   tr: {
-    borderBottom: '1px solid #e2e8f0'
+    borderBottom: '1px solid var(--input-bg)'
   },
   td: {
-    padding: '15px',
-    color: '#2d3748',
+    padding: '16px',
+    color: 'var(--texto-preto)',
     fontSize: '0.95rem'
   },
   tdCenter: {
-    padding: '15px',
+    padding: '16px',
     textAlign: 'center'
   },
   btnAssociar: {
     backgroundColor: 'transparent',
-    color: '#1B85CC',
-    border: '1px solid #1B85CC',
+    color: 'var(--azul-claro)',
+    border: '1.5px solid var(--azul-claro)',
     padding: '8px 16px',
     borderRadius: '6px',
     fontSize: '0.85rem',
+    fontFamily: 'var(--font-header-btn)',
     fontWeight: 'bold',
     cursor: 'pointer'
   }

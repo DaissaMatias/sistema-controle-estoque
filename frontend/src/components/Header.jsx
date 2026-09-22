@@ -34,28 +34,31 @@ export default function Header() {
 
 const styles = {
     header: {
-        backgroundColor: '#0C1542',
+        backgroundColor: 'var(--azul-escuro)',
         color: '#f3f3f3',
         display: 'flex', 
         justifyContent: 'space-between',
         alighItems: 'center',
-        padding: '15px 40px',
-        boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+        padding: '20px 40px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+        width: '100%'
     },
     logo: {
         margin: 0,
-        fontSize: '1.2rem',
+        fontSize: '1.25rem',
+        fontFamily: 'var(--font-header-btn)',
         letterSpacing: '1px',
     },
     nav: {
         display: 'flex',
-        gap: '20px'
+        gap: '25px'
     },
     link: {
         color: '#ffffff',
         textDecoration: 'none', 
         paddingBottom: '5px',
         fontSize: '1rem',
+        fontFamily: 'var(--font-header-btn)',
         transition: 'all 0.2s ease'
     }
 };
