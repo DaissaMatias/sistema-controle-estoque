@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+require('dotenv').config();
+const db = require('./db');
 
 const app = express();
 app.use(cors());
@@ -15,14 +17,28 @@ app.get('/', (req, res) => {
 //==============================
 
 //Listar fornecedores
-app.get('/fornecedores', (req, res) => {
-    res.json({ mensagem: "Retorna a lista de fornecedores" });
+app.get('/fornecedores', async (req, res) => {
+    try {
+        const resultado = await db.query('SELECT * FROM fornecedores ORDER BY id DESC');
+        res.json(resultado.rows);
+    } catch (erro) {
+        res.status(500).json({ erro: "Erro ao buscar fornecedores" });
+    }
+
 });
 
 //Cadastrar fornecedor
-app.post('/fornecedores', (req, res) => {
+app.post('/fornecedores', async (req, res) => {
     const { nome_empresa, cnpj, endereco, telefone, email, contato_principal } = req.body;
-    res.status(201).json({ mensagem: "Fornecedor cadastrado com sucesso!" });
+    try {
+        const novoFornecedor = await db.query(
+            `INSERT INTO fornecedores (nome_empresa, cnpj, endereco, telefone, email, contato_principal) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+            [nome_empresa, cnpj, endereco, telefone, email, contato_principal]
+        );
+        res.status(201).json(novoFornecedor.rows[0]);
+    } catch (erro) {
+        res.status(400).json({ erro: "Erro aao cadastrar fornecedor. Verifique se o CNPJ já existe" });
+    }
 });
 
 //===================================
@@ -30,20 +46,51 @@ app.post('/fornecedores', (req, res) => {
 //===================================
 
 //Listar todos os produtos (Tela Home)
-app.get('/produtos', (req, res) => {
-    res.json({ mensagem: "Retorna a lista de produtos" });
+app.get('/produtos', async (req, res) => {
+    try {
+        const resultado = await db.query('SELECT * FROM produtos ORDER BY id DESC');
+        res.json(resultado.rows);
+    } catch (erro) {
+        res.status(500).json({ erro: "Erro ao buscar produtos." });
+    }
 });
 
 //Cadastrar produto (tela 2)
-app.post('/produtos', (req, res) => {
-    const { nome, codigo_barras, descricao, quantidade_estoque, categoria } = req.body;
-    res.status(201).json({ mensagem: "Produto cadastrado com sucesso" });
+app.post('/produtos', async (req, res) => {
+    const { nome, codigo_barras, descricao, quantidade_estoque, categoria, data_validade, imagem_url } = req.body;
+    try {
+        const novoProduto = await db.query(
+            `INSERT INTO produtos (nome, codigo_barras, descricao, quantidade_estoque, categoria, data_validade, imagem_url) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+            [nome, codigo_barras, descricao, quantidade_estoque, categoria, data_validade, imagem_url]
+        )
+        res.status(201).json(novoProduto.rows[0]);
+    } catch (erro) {
+        res.status(400).json({ erro: "Erro ao cadastrar produto. Verifique se o Código de Barras já existe." })
+    }
 });
 
 //Detalhes do produto + fornecedores associados (tela 4)
-app.get('/produtos/:id', (req, res) => {
-    const {id} = req.params;
-    res.json({mensagem: `Retorna os detalhes e os fornecedores do produto ${id}`});
+app.get('/produtos/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const produtoRes = await db.query('SELECT + FROM produtos WHERE id = $1', [id]);
+        if (produtoRes.rows.length === 0) {
+            return res.status(404).json({ erro: "Produto não encontrado." });
+        }
+        const fornecedoresRes = await db.query(
+            `SELECT f.id, f.nome_empresa, f.cnpj 
+            FROM fornecedores f
+            JOIN produto_fornecedores pf ON f.id = pf.fornecedor_id
+            WHERE pf.produto_id = $1`, [id]
+        );
+
+        res.json({
+            produto: produtoRes.rows[0],
+            fornecedores_associados: fornecedoresRes.rows
+        });
+    } catch (erro) {
+        res.status(500).json({ erro: "Erro ao buscar detalhes do produto." });
+    }
 });
 
 //======================================
@@ -51,25 +98,44 @@ app.get('/produtos/:id', (req, res) => {
 //======================================
 
 //1° e 2° cenário: Associar fornecedor ao produto
-app.post('/produtos/:id/fornecedores', (req, res)=>{
-    const {id} = req.params;
-    const {fornecedor_id} = req.body;
+app.post('/produtos/:id/fornecedores', async (req, res) => {
+    const { id } = req.params;
+    const { fornecedor_id } = req.body;
 
-    //A lógica no controller vai tratar os 2 cenários:
-    // - Sucesso: "Fornecedor associado com sucesso ao produto!" (Status 201)
-    // - Já associado (erro no banco pela regra Unique): "Fornecedor já está associado a este produto" (status 400)
-
-    res.status(201).json({mensagem: "Fornecedor associado com sucesso ao produto!"});
+    try {
+        await db.query(
+            'INSERT INTO produto_fornecedores (produto_id, fornecedor_id) VALUES ($1, $2)',
+            [id, fornecedor_id]
+        );
+        res.status(201).json({ mensagem: "Fornecedor associado com sucesso ao produto!" });
+    } catch (erro) {
+        if(erro.code === '23505') {
+            return res.status(400).json({erro: "Fornecedor já associado a este produto!"});
+        }
+        res.status(500).json({erro: "Erro ao associar fornecedor ao produto."})
+    }
 });
 
 //3° Cenário: Desassociar Fornecedor do Produto
-app.delete('/produtos/:id/fornecedores/:fornecedorId', (req, res)=>{
-    const {id, fornecedorId} = req.params;
-    res.json({mensagem:"Fornecedor desassociado com sucesso!"});
+app.delete('/produtos/:id/fornecedores/:fornecedorId', async (req, res) => {
+    const { id, fornecedorId } = req.params;
+
+    try{
+        const resultado = await db.query(
+            'DELETE FROM produto_fornecedores WHERE produto_id = $1 AND fornecedor_id = $2',
+            [id, fornecedorId]
+        );
+        if(resultado.rowCount === 0){
+            return res.status(404).json({erro: "Associação não encontrada."});
+        }
+        res.json({ mensagem: "Fornecedor desassociado com sucesso!" });
+    }catch(erro){
+        res.status(500).json({erro: "Erro ao desassociar fornecedores"});
+    }
 });
 
 //Inicia o servidor na porta 3000
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
 });
