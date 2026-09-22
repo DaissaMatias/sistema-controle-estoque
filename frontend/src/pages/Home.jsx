@@ -10,22 +10,32 @@ export default function Home() {
 
     //Busca os produtos na API assim que a tela carrega
     useEffect(()=> {
-        carregarProdutos();
-    }, []);
+        let ativo = true; 
 
-    const carregarProdutos = async () => {
+        const carregarProdutos = async () => {
         try{
             const resposta = await api.get('/produtos');
-            setProdutos(resposta.data);
+            if(ativo) {
+                setProdutos(resposta.data);
+            }
         } catch (erro) {
             console.error("Erro ao buscar produtos:", erro);
         } finally {
-            setCarregando(false);
+            if(ativo){
+                setCarregando(false);
+            }
         }
     };
 
+    carregarProdutos();
+
+    return ()=> {
+        ativo = false;
+    }
+}, []);
+
   return (
-    <div style={{backgroundColor: '#f4f6f8', minHeight: '100vh'}}>
+    <div style={{backgroundColor: 'var(--fundo-branco)', minHeight: '100vh'}}>
         <Header/>
 
         <main style={styles.container}>
@@ -46,10 +56,11 @@ export default function Home() {
             </div>
 
             {carregando ? (
-                <p style={{textAlign: 'center', marginTop: '40px'}}>Carregando estoque...</p>
+                <p style={{textAlign: 'center', marginTop: '40px', color:'var(--texto-preto)'}}>Carregando estoque...</p>
             ) : produtos.length === 0 ? (
                 <div style={styles.cardVazio}>
-                    <p>Nenhum produto cadastrado no banco de dados.</p>
+                    <p style={{marginBottom:'20px', color: 'var(--texto-preto)'}}>
+                        Nenhum produto cadastrado no banco de dados.</p>
                     <button style={styles.btnNovo} onClick={()=> navigate('/produtos/novo')}>
                         Cadastrar Primeiro Produto
                     </button>
@@ -69,7 +80,7 @@ export default function Home() {
                         {produtos.map((produto)=> (
                             <tr key={produto.id} style={styles.tr}>
                                 <td style={styles.td}>{produto.codigo_barras}</td>
-                                <td style={{...styles.td, fontWeight: 'bold'}}>{produto.nome}</td>
+                                <td style={{...styles.td, fontWeight: '600'}}>{produto.nome}</td>
                                 <td style={styles.td}>{produto.categoria}</td>
                                 <td style={styles.td}>{produto.quantidade_estoque}</td>
                                 <td style={styles.tdCenter}>

@@ -39,13 +39,14 @@ const styles = {
         display: 'flex', 
         justifyContent: 'space-between',
         alighItems: 'center',
-        padding: '20px 40px',
+        padding: '30px 40px',
         boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
         width: '100%'
     },
     logo: {
         margin: 0,
-        fontSize: '1.25rem',
+        fontSize: '1.7rem',
+        fontWeight: '700',
         fontFamily: 'var(--font-header-btn)',
         letterSpacing: '1px',
     },
@@ -57,8 +58,8 @@ const styles = {
         color: '#ffffff',
         textDecoration: 'none', 
         paddingBottom: '5px',
-        fontSize: '1rem',
+        fontSize: '1.3rem',
         fontFamily: 'var(--font-header-btn)',
-        transition: 'all 0.2s ease'
+        transition: 'all 0.2s ease',
     }
 };
