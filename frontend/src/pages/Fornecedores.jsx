@@ -63,12 +63,43 @@ export default function Fornecedores() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    //1.Limpa o CNPJ (remove pontuações e converte letras para maiúsculas)
+    const cnpjLimpo = formData.cnpj.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+
+    //2.Valida se possui exatamente 14 caracteres no formato alfanumérico ou numérico
+    //(12 caracteres alfanuméricos + 2 digitos finais numéricos)
+    const cnpjRegex = /^[A-Z0-9]{12}\d{2}$/;
+
+    if(!cnpjRegex.test(cnpjLimpo)) {
+      alert('CNPJ inválido. O CNPJ deve conter 14 caracteres (os 12 primeiros podendo ser letras/números e os 2 últimos obrigatoriamente números).');
+      return;
+    }
+
+    //3.Validação de E-mail
+    if(formData.email){
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if(!emailRegex.test(formData.email)){
+        alert('Por favor, insira um e-mail válido (ex: contato@empresa.com).');
+        return;
+      }
+    }
+
+    //4.Validação de Telefone (DDD + 8 ou 9 digitos)
+    if(formData.telefone){
+      const telefoneApenasNumeros = formData.telefone.replace(/\D/g, '');
+      if(telefoneApenasNumeros.length < 10 || telefoneApenasNumeros.length > 11){
+        alert('O telefone deve conter DDD + número (10 ou 11 dígitos). Ex: 11999998888');
+        return;
+      }
+    }
+
     setSalvando(true);
 
     try {
       await api.post('/fornecedores', {
         nome_empresa: formData.nome_empresa,
-        cnpj: formData.cnpj,
+        cnpj: cnpjLimpo,
         endereco: formData.endereco || null,
         telefone: formData.telefone || null,
         email: formData.email || null,

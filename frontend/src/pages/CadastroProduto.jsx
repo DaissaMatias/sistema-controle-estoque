@@ -27,6 +27,14 @@ export default function CadastroProduto() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    //Validação de EAN-13 (Exatamente 13 números)
+    const eanRegex = /^\d{13}$/;
+    if(!eanRegex.test(formData.codigo_barras)) {
+      alert('O Código de Barras deve conter exatamente 13 dígitos numéricos (padrão EAN-13).');
+      return;
+    }
+    
     setCarregando(true);
 
     try{
