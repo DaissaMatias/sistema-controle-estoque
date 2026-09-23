@@ -32,7 +32,12 @@ export default function CadastroProduto() {
     try{
       await api.post('/produtos', {
         ...formData,
-        quantidade_estoque: Number(formData.quantidade_estoque) || 0
+        quantidade_estoque: Number(formData.quantidade_estoque) || 0,
+        //Converte string vazia para null para não quebrar o tipo DATE do Postgree
+        data_validade: formData.data_validade ? formData.data_validade : null,
+        categoria: formData.categoria ? formData.categoria : null,
+        imagem_url: formData.imagem_url ? formData.imagem_url : null,
+        //descricao: formData.descricao ? formData.descricao : null
       });
 
       alert('Produto cadastrado com sucesso');
