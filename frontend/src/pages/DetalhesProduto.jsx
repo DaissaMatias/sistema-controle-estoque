@@ -1,95 +1,82 @@
-import { useNavigate, useParams } from "react-router-dom";
-import Header from "../components/Header";
-import api from "../services/api";
-import { useEffect, useState } from "react";
-
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import Header from '../components/Header';
+import api from '../services/api';
 
 export default function DetalhesProduto() {
-  const {id} = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
 
   const [produto, setProduto] = useState(null);
   const [fornecedoresAssociados, setFornecedoresAssociados] = useState([]);
   const [todosFornecedores, setTodosFornecedores] = useState([]);
   const [fornecedorSelecionadoId, setFornecedorSelecionadoId] = useState('');
-
+  
   const [carregando, setCarregando] = useState(true);
   const [associando, setAssociando] = useState(false);
+  const [excluindo, setExcluindo] = useState(false);
+  const [erroImagem, setErroImagem] = useState(false);
+  const [recarregar, setRecarregar] = useState(0);
 
-  //Carrega dados do produto, seus fornecedores vinculados e a lista geral de fornecedores
-  const carregarDadosGerais = async () => {
-    try {
-      const [resProduto, resTodosFornecedores] = await Promise.all([
-        api.get(`/produtos/${id}`),
-        api.get('/fornecedores')
-      ]);
+  const atualizarTela = () => setRecarregar((prev) => prev + 1);
 
-      setProduto(resProduto.data.produto);
-      setFornecedoresAssociados(resProduto.data.fornecedores_associados);
-      setTodosFornecedores(resTodosFornecedores.data);
-    } catch (erro) {
-      console.error("Erro ao carregar detalhes do produto:", erro);
-      alert("Produto não encontrado ou erro na API");
-      navigate('/');
-    }finally {
-      setCarregando(false);
-    }
-  };
-
-  useEffect(()=> {
+  useEffect(() => {
     let ativo = true;
 
-    const inicializar = async () => {
-      try{
+    const carregarDados = async () => {
+      try {
         const [resProduto, resTodosFornecedores] = await Promise.all([
           api.get(`/produtos/${id}`),
           api.get('/fornecedores')
         ]);
 
-        if(ativo) {
+        if (ativo) {
           setProduto(resProduto.data.produto);
-          setFornecedoresAssociados(resProduto.data.fornecedores_associados);
-          setTodosFornecedores(resTodosFornecedores.data);
+          setFornecedoresAssociados(resProduto.data.fornecedores_associados || []);
+          
+          if (Array.isArray(resTodosFornecedores.data)) {
+            setTodosFornecedores(resTodosFornecedores.data);
+          }
         }
       } catch (erro) {
-        console.error("Erro ao carregar detalhes do produto:", erro);
-        if(ativo){
-          alert("Produto não encontrado ou erro na API");
+        console.error("Erro ao carregar dados do produto:", erro);
+        if (ativo) {
+          alert("Erro ao carregar as informações do produto.");
           navigate('/');
         }
       } finally {
-        if(ativo) {
+        if (ativo) {
           setCarregando(false);
         }
       }
     };
 
-    inicializar();
+    carregarDados();
 
-    return ()=> {
+    return () => {
       ativo = false;
     };
-  }, [id, navigate]);
+  }, [id, recarregar, navigate]);
 
-  //Cenário 1 e 2: Associar Fornecedor ao Produto
+  // 1º e 2º Cenário: Associar Fornecedor
   const handleAssociar = async (e) => {
     e.preventDefault();
 
-    if(!fornecedorSelecionadoId) {
+    if (!fornecedorSelecionadoId) {
       alert("Por favor, selecione um fornecedor na lista.");
       return;
     }
 
     setAssociando(true);
 
-    try{
+    try {
       await api.post(`/produtos/${id}/fornecedores`, {
         fornecedor_id: fornecedorSelecionadoId
       });
 
       alert("Fornecedor associado com sucesso!");
       setFornecedorSelecionadoId('');
-      carregarDadosGerais(); // Atualiza a lista na tela
+      atualizarTela();
     } catch (erro) {
       console.error("Erro ao associar fornecedor:", erro);
       const msg = erro.response?.data?.erro || "Erro ao associar fornecedor.";
@@ -99,46 +86,210 @@ export default function DetalhesProduto() {
     }
   };
 
-  //Cenário 3: Desassociar Fornecedor do Produto
+  // 3º Cenário: Desassociar Apenas o Fornecedor Selecionado
   const handleDesassociar = async (fornecedorId, nomeFornecedor) => {
-    const confirmar = window.confirm(`Deseja realmente remover o vínculo com "${nomeFornecedor}"?`);
-    if(!confirmar) return;
+    const confirmar = window.confirm(`Deseja remover o vínculo do fornecedor "${nomeFornecedor}" com este produto?`);
+    if (!confirmar) return;
 
     try {
       await api.delete(`/produtos/${id}/fornecedores/${fornecedorId}`);
       alert("Vínculo removido com sucesso!");
-      carregarDadosGerais(); //Atualiza a lista na tela
+      atualizarTela();
     } catch (erro) {
       console.error("Erro ao desassociar fornecedor:", erro);
       alert("Erro ao remover vínculo do fornecedor.");
     }
   };
 
-  if(carregando) {
+  // Excluir Produto do Estoque
+  const handleExcluirProduto = async () => {
+    const confirmar = window.confirm(
+      `Tem certeza que deseja EXCLUIR o produto "${produto.nome}" do estoque?\n\nEsta ação removerá o produto e todos os seus vínculos.`
+    );
+    if (!confirmar) return;
+
+    setExcluindo(true);
+
+    try {
+      await api.delete(`/produtos/${id}`);
+      alert("Produto excluído com sucesso!");
+      navigate('/');
+    } catch (erro) {
+      console.error("Erro ao excluir produto:", erro);
+      alert("Erro ao excluir o produto do banco de dados.");
+    } finally {
+      setExcluindo(false);
+    }
+  };
+
+  if (carregando) {
     return (
-      <div style={{backgroundColor: 'var(--fundo-branco)', minHeight: '100vh'}}>
-        <Header/>
-        <p style={{textAlign: 'center', marginTop: '50px', color: 'var(--texto-preto)'}}>
+      <div style={{ backgroundColor: 'var(--fundo-branco)', minHeight: '100vh' }}>
+        <Header />
+        <p style={{ textAlign: 'center', marginTop: '50px', color: 'var(--texto-preto)' }}>
           Carregando informações do produto...
         </p>
       </div>
     );
   }
 
+  if (!produto) return null;
+
   return (
-    <div style={{backgroundColor: 'var(--fundo-branco)', mindHeight: '100vh'}}>
-      <Header/>
+    <div style={{ backgroundColor: 'var(--fundo-branco)', minHeight: '100vh' }}>
+      <Header />
 
       <main style={styles.container}>
-        <button onClick={() => navigate('/')} style={styles.btnVoltar}>
-          ← Voltar para Produtos
-        </button>
+        <div style={styles.navBar}>
+          <button onClick={() => navigate('/')} style={styles.btnVoltar}>
+            ← VOLTAR PARA PRODUTOS
+          </button>
 
-        {/*BLOCO 1: DETALHES DO PRODUTO*/}
-        
+          <button 
+            onClick={handleExcluirProduto} 
+            disabled={excluindo}
+            style={styles.btnExcluirProduto}
+          >
+            {excluindo ? 'EXCLUINDO...' : '🗑️ EXCLUIR PRODUTO'}
+          </button>
+        </div>
+
+        {/* DETALHES DO PRODUTO */}
+        <section style={styles.card}>
+          <div style={styles.productLayout}>
+            <div style={styles.imageContainer}>
+              {produto.imagem_url && !erroImagem ? (
+                <img 
+                  src={produto.imagem_url} 
+                  alt={produto.nome} 
+                  referrerPolicy="no-referrer"
+                  style={styles.productImage}
+                  onError={() => setErroImagem(true)}
+                />
+              ) : (
+                <div style={styles.noImagePlaceholder}>
+                  <span style={{ fontSize: '2.5rem' }}>🖼️</span>
+                  <span style={styles.noImageText}>
+                    {produto.imagem_url && erroImagem ? 'Imagem indisponível' : 'Sem imagem cadastrada'}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div style={styles.productDetails}>
+              <div style={styles.productHeader}>
+                <h1 style={styles.productTitle}>{produto.nome}</h1>
+                <span style={styles.badgeCategory}>{produto.categoria || 'Sem Categoria'}</span>
+              </div>
+
+              <div style={styles.infoGrid}>
+                <div style={styles.infoBox}>
+                  <span style={styles.infoLabel}>CÓDIGO DE BARRAS (EAN)</span>
+                  <p style={styles.infoValue}>{produto.codigo_barras}</p>
+                </div>
+
+                <div style={styles.infoBox}>
+                  <span style={styles.infoLabel}>QUANTIDADE EM ESTOQUE</span>
+                  <p style={styles.infoValue}>{produto.quantidade_estoque} un.</p>
+                </div>
+
+                <div style={styles.infoBox}>
+                  <span style={styles.infoLabel}>DATA DE VALIDADE</span>
+                  <p style={styles.infoValue}>
+                    {produto.data_validade 
+                      ? new Date(produto.data_validade).toLocaleDateString('pt-BR') 
+                      : 'Não aplicável / Não informada'}
+                  </p>
+                </div>
+              </div>
+
+              {produto.descricao && (
+                <div style={styles.descBox}>
+                  <span style={styles.infoLabel}>DESCRIÇÃO DETALHADA</span>
+                  <p style={styles.descText}>{produto.descricao}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* ASSOCIAÇÃO N:N */}
+        <section style={{ ...styles.card, marginTop: '30px' }}>
+          <h2 style={styles.sectionTitle}>GESTÃO DE FORNECEDORES DO PRODUTO</h2>
+          <p style={styles.subtitle}>Associe ou remova os parceiros comerciais que fornecem este item.</p>
+
+          <form onSubmit={handleAssociar} style={styles.formAssociar}>
+            <div style={{ flex: 1 }}>
+              <label style={styles.label}>SELECIONE UM FORNECEDOR CADASTRADO</label>
+              <select
+                value={fornecedorSelecionadoId}
+                onChange={(e) => setFornecedorSelecionadoId(e.target.value)}
+                style={styles.select}
+              >
+                <option value="">
+                  -- Escolha um fornecedor na lista ({todosFornecedores.length} cadastrados) --
+                </option>
+                {todosFornecedores.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.nome_empresa} (CNPJ: {f.cnpj})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <button 
+              type="submit" 
+              disabled={associando} 
+              style={styles.btnVincular}
+            >
+              {associando ? 'VINCULANDO...' : '+ VINCULAR FORNECEDOR'}
+            </button>
+          </form>
+
+          <div style={{ marginTop: '24px' }}>
+            <h3 style={styles.subTableTitle}>
+              Fornecedores Vinculados ({fornecedoresAssociados.length})
+            </h3>
+
+            {fornecedoresAssociados.length === 0 ? (
+              <div style={styles.cardVazio}>
+                <p style={{ color: 'var(--texto-preto)', margin: 0 }}>
+                  Nenhum fornecedor vinculado a este produto ainda.
+                </p>
+              </div>
+            ) : (
+              <table style={styles.table}>
+                <thead>
+                  <tr style={styles.trHeader}>
+                    <th style={styles.th}>RAZÃO SOCIAL / EMPRESA</th>
+                    <th style={styles.th}>CNPJ</th>
+                    <th style={styles.thCenter}>AÇÃO</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {fornecedoresAssociados.map((fornecedor) => (
+                    <tr key={fornecedor.id} style={styles.tr}>
+                      <td style={{ ...styles.td, fontWeight: '600' }}>{fornecedor.nome_empresa}</td>
+                      <td style={styles.td}>{fornecedor.cnpj}</td>
+                      <td style={styles.tdCenter}>
+                        <button
+                          type="button"
+                          onClick={() => handleDesassociar(fornecedor.id, fornecedor.nome_empresa)}
+                          style={styles.btnDesassociar}
+                        >
+                          ✕ Desvincular
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </section>
       </main>
     </div>
-  )
+  );
 }
 
 const styles = {
@@ -146,6 +297,12 @@ const styles = {
     maxWidth: '1100px',
     margin: '30px auto',
     padding: '0 20px'
+  },
+  navBar: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '20px'
   },
   btnVoltar: {
     backgroundColor: 'transparent',
@@ -155,8 +312,18 @@ const styles = {
     fontFamily: 'var(--font-header-btn)',
     fontWeight: 'bold',
     cursor: 'pointer',
-    marginBottom: '20px',
     padding: 0
+  },
+  btnExcluirProduto: {
+    backgroundColor: '#fff1f0',
+    color: '#e53e3e',
+    border: '1px solid #ffa39e',
+    padding: '8px 16px',
+    borderRadius: '6px',
+    fontSize: '0.85rem',
+    fontFamily: 'var(--font-header-btn)',
+    fontWeight: 'bold',
+    cursor: 'pointer'
   },
   card: {
     backgroundColor: '#ffffff',
@@ -165,18 +332,57 @@ const styles = {
     border: '1px solid var(--input-bg)',
     boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
   },
+  productLayout: {
+    display: 'grid',
+    gridTemplateColumns: '220px 1fr',
+    gap: '30px',
+    alignItems: 'start'
+  },
+  imageContainer: {
+    width: '100%',
+    height: '220px',
+    backgroundColor: 'var(--fundo-branco)',
+    borderRadius: '8px',
+    overflow: 'hidden',
+    border: '1px solid var(--input-bg)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '12px',
+    boxSizing: 'border-box'
+  },
+  productImage: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'contain'
+  },
+  noImagePlaceholder: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '8px',
+    color: 'var(--placeholder-grafite)'
+  },
+  noImageText: {
+    fontSize: '0.8rem',
+    fontWeight: '600'
+  },
+  productDetails: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px'
+  },
   productHeader: {
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     borderBottom: '2px solid var(--fundo-branco)',
-    paddingBottom: '20px',
-    marginBottom: '24px'
+    paddingBottom: '12px'
   },
   productTitle: {
-    margin: '0 0 8px 0',
+    margin: 0,
     color: 'var(--azul-escuro)',
-    fontSize: '1.8rem',
+    fontSize: '1.6rem',
     fontFamily: 'var(--font-header-btn)'
   },
   badgeCategory: {
@@ -187,22 +393,14 @@ const styles = {
     fontSize: '0.8rem',
     fontWeight: '600'
   },
-  productImage: {
-    width: '90px',
-    height: '90px',
-    objectFit: 'cover',
-    borderRadius: '8px',
-    border: '1px solid var(--input-bg)'
-  },
   infoGrid: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr 1fr',
-    gap: '20px',
-    marginBottom: '20px'
+    gap: '16px'
   },
   infoBox: {
     backgroundColor: 'var(--fundo-branco)',
-    padding: '16px',
+    padding: '14px',
     borderRadius: '6px'
   },
   infoLabel: {
@@ -210,26 +408,25 @@ const styles = {
     fontSize: '0.75rem',
     fontFamily: 'var(--font-header-btn)',
     color: 'var(--placeholder-grafite)',
-    marginBottom: '6px',
+    marginBottom: '4px',
     fontWeight: 'bold'
   },
   infoValue: {
     margin: 0,
-    fontSize: '1.1rem',
+    fontSize: '1rem',
     fontWeight: '600',
     color: 'var(--texto-preto)'
   },
   descBox: {
     backgroundColor: 'var(--fundo-branco)',
-    padding: '16px',
-    borderRadius: '6px',
-    marginTop: '10px'
+    padding: '14px',
+    borderRadius: '6px'
   },
   descText: {
     margin: 0,
     color: 'var(--texto-preto)',
-    fontSize: '0.95rem',
-    lineHeight: '1.5'
+    fontSize: '0.9rem',
+    lineHeight: '1.4'
   },
   sectionTitle: {
     margin: 0,
@@ -264,7 +461,7 @@ const styles = {
     borderRadius: '6px',
     padding: '12px',
     fontSize: '0.95rem',
-    color: 'var(--texto-preto)',
+    color: '#000000',
     outline: 'none'
   },
   btnVincular: {

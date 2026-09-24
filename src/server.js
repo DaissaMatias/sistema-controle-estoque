@@ -41,9 +41,9 @@ app.post('/fornecedores', async (req, res) => {
     }
 });
 
-//===================================
-//ROTAS DE PRODUTOS (tela 1 e tela 2)
-//===================================
+//=======================================
+//ROTAS DE PRODUTOS (tela 1 e tela 2 e 4)
+//=======================================
 
 //Listar todos os produtos (Tela Home)
 app.get('/produtos', async (req, res) => {
@@ -73,7 +73,7 @@ app.post('/produtos', async (req, res) => {
 app.get('/produtos/:id', async (req, res) => {
     const { id } = req.params;
     try {
-        const produtoRes = await db.query('SELECT + FROM produtos WHERE id = $1', [id]);
+        const produtoRes = await db.query('SELECT * FROM produtos WHERE id = $1', [id]);
         if (produtoRes.rows.length === 0) {
             return res.status(404).json({ erro: "Produto não encontrado." });
         }
@@ -89,6 +89,7 @@ app.get('/produtos/:id', async (req, res) => {
             fornecedores_associados: fornecedoresRes.rows
         });
     } catch (erro) {
+        console.error("Erro no backend ao buscar produto:", erro)
         res.status(500).json({ erro: "Erro ao buscar detalhes do produto." });
     }
 });
@@ -109,28 +110,51 @@ app.post('/produtos/:id/fornecedores', async (req, res) => {
         );
         res.status(201).json({ mensagem: "Fornecedor associado com sucesso ao produto!" });
     } catch (erro) {
-        if(erro.code === '23505') {
-            return res.status(400).json({erro: "Fornecedor já associado a este produto!"});
+        if (erro.code === '23505') {
+            return res.status(400).json({ erro: "Fornecedor já associado a este produto!" });
         }
-        res.status(500).json({erro: "Erro ao associar fornecedor ao produto."})
+        res.status(500).json({ erro: "Erro ao associar fornecedor ao produto." })
     }
 });
 
-//3° Cenário: Desassociar Fornecedor do Produto
+//3° Cenário: Desassociar Fornecedor do Produto (Apenas apaga a linha na tabela N:N)
 app.delete('/produtos/:id/fornecedores/:fornecedorId', async (req, res) => {
     const { id, fornecedorId } = req.params;
-
-    try{
+    try {
         const resultado = await db.query(
             'DELETE FROM produto_fornecedores WHERE produto_id = $1 AND fornecedor_id = $2',
             [id, fornecedorId]
         );
-        if(resultado.rowCount === 0){
-            return res.status(404).json({erro: "Associação não encontrada."});
+
+        if (resultado.rowCount === 0) {
+            return res.status(404).json({ erro: "Associação não encontrada." });
         }
+
         res.json({ mensagem: "Fornecedor desassociado com sucesso!" });
-    }catch(erro){
-        res.status(500).json({erro: "Erro ao desassociar fornecedores"});
+    } catch (erro) {
+        console.error("Erro ao excluir produto:", erro);
+        res.status(500).json({ erro: "Erro ao excluir produto do banco de dados." });
+    }
+});
+
+// Excluir PRODUTO completo (Apaga vínculos primeiro e depois o produto)
+app.delete('/produtos/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        // 1. Apaga os vínculos da tabela N:N para não violar a FK
+        await db.query('DELETE FROM produto_fornecedores WHERE produto_id = $1', [id]);
+
+        // 2. Apaga o produto
+        const resultado = await db.query('DELETE FROM produtos WHERE id = $1', [id]);
+
+        if (resultado.rowCount === 0) {
+            return res.status(404).json({ erro: "Produto não encontrado." });
+        }
+
+        res.json({ mensagem: "Produto excluído com sucesso!" });
+    } catch (erro) {
+        console.error("Erro ao excluir produto:", erro);
+        res.status(500).json({ erro: "Erro interno ao excluir produto do banco de dados." });
     }
 });
 
