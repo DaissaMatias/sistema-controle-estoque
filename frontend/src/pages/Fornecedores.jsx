@@ -228,7 +228,7 @@ export default function Fornecedores() {
                 type="text"
                 name="endereco"
                 required
-                placeholder="Av. Paulista, 1000 - São Paulo/SP"
+                placeholder="Av. Paulista, 1000, Bela Vista - São Paulo/SP"
                 value={formData.endereco}
                 onChange={handleChange}
                 style={styles.input}
@@ -265,6 +265,7 @@ export default function Fornecedores() {
                   <th style={styles.th}>CNPJ</th>
                   <th style={styles.th}>TELEFONE</th>
                   <th style={styles.th}>E-MAIL</th>
+                  <th style={styles.th}>ENDEREÇO</th>
                   <th style={styles.th}>CONTATO</th>
                   <th style={styles.thCenter}>AÇÃO</th>
                 </tr>
@@ -276,6 +277,7 @@ export default function Fornecedores() {
                     <td style={styles.td}>{fornecedor.cnpj}</td>
                     <td style={styles.td}>{fornecedor.telefone || '-'}</td>
                     <td style={styles.td}>{fornecedor.email || '-'}</td>
+                    <td style={styles.td}>{fornecedor.endereco || '-'}</td>
                     <td style={styles.td}>{fornecedor.contato_principal || '-'}</td>
                     <td style={styles.tdCenter}>
                       <button
@@ -415,7 +417,7 @@ const styles = {
     borderBottom: '1px solid var(--input-bg)'
   },
   td: {
-    padding: '16px',
+    padding: '16px 10px',
     color: 'var(--texto-preto)',
     fontSize: '0.95rem'
   },
@@ -427,7 +429,7 @@ const styles = {
     backgroundColor: '#fff1f0',
     color: '#e53e3e',
     border: '1px solid #ffa39e',
-    padding: '6px 14px',
+    padding: '6px 10px',
     borderRadius: '4px',
     fontSize: '0.8rem',
     fontWeight: 'bold',
