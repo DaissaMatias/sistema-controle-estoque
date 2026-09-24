@@ -65,6 +65,7 @@ app.post('/produtos', async (req, res) => {
         )
         res.status(201).json(novoProduto.rows[0]);
     } catch (erro) {
+        console.error("Erro detalhado no PostgreSQL ao cadastrar produto:", erro);
         res.status(400).json({ erro: "Erro ao cadastrar produto. Verifique se o Código de Barras já existe." })
     }
 });
@@ -97,7 +98,7 @@ app.put('/produtos/:id', async (req, res) => {
         res.json(resultado.rows[0]);
     } catch (erro) {
         console.error("Erro ao atualizar produto:", erro);
-        res.status(400).json({ erro: "Erro ao atualizar produto. Verifique se o Código de Barras já pertence a outro produto." });
+        res.status(400).json({ erro: "Erro ao atualizar produto. Verifique se o Código de Barras já pertence a outro produto" });
     }
 });
 

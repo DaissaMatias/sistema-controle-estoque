@@ -28,11 +28,13 @@ export default function CadastroProduto() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    //Validação de EAN-13 (Exatamente 13 números)
-    const eanRegex = /^\d{13}$/;
-    if(!eanRegex.test(formData.codigo_barras)) {
-      alert('O Código de Barras deve conter exatamente 13 dígitos numéricos (padrão EAN-13).');
-      return;
+    //Validação de EAN-13 apenas SE o campo for preenchido
+    if(formData.codigo_barras && formData.codigo_barras.trim() !== '') {
+      const eanRegex = /^\d{13}$/;
+      if(!eanRegex.test(formData.codigo_barras)) {
+        alert('O Código de Barras deve conter exatamente 13 dígitos numéricos (padrão EAN-13).');
+        return;
+      }
     }
     
     setCarregando(true);
@@ -42,10 +44,12 @@ export default function CadastroProduto() {
         ...formData,
         quantidade_estoque: Number(formData.quantidade_estoque) || 0,
         //Converte string vazia para null para não quebrar o tipo DATE do Postgree
+          //Envia NULL se estiver vazio para não conflitar com a restrição UNIQUE no PostgreSQL
+        codigo_barras: formData.codigo_barras?.trim() ? formData.codigo_barras.trim() : null,
         data_validade: formData.data_validade ? formData.data_validade : null,
         categoria: formData.categoria ? formData.categoria : null,
         imagem_url: formData.imagem_url ? formData.imagem_url : null,
-        //descricao: formData.descricao ? formData.descricao : null
+        descricao: formData.descricao ? formData.descricao : null
       });
 
       alert('Produto cadastrado com sucesso');
@@ -88,11 +92,10 @@ export default function CadastroProduto() {
               </div>
 
               <div style={styles.group}>  
-                <label style={styles.label}>Código de Barras *</label>
+                <label style={styles.label}>Código de Barras</label>
                 <input 
                   type="text"
                   name='codigo_barras'
-                  required
                   placeholder='Insira o código de barras'
                   value={formData.codigo_barras}
                   onChange={handleChange}
@@ -104,11 +107,12 @@ export default function CadastroProduto() {
             {/*Linha 2: Categoria, estoque e validade*/}
             <div style={styles.rowThree}>
               <div style={styles.group}>  
-                <label style={styles.label}>Categoria</label>
+                <label style={styles.label}>Categoria *</label>
                 <input 
                   type="text"
                   name='categoria'
                   placeholder='Ex: Periféricos'
+                  required
                   value={formData.categoria}
                   onChange={handleChange}
                   style={styles.input} 
@@ -116,11 +120,10 @@ export default function CadastroProduto() {
               </div>
 
               <div style={styles.group}>  
-                <label style={styles.label}>Quantidade em Estoque *</label>
+                <label style={styles.label}>Quantidade em Estoque</label>
                 <input 
                   type="number"
                   name='quantidade_estoque'
-                  required
                   min="0"
                   placeholder='Quantidade disponível'
                   value={formData.quantidade_estoque}

@@ -350,10 +350,10 @@ const styles = {
   imageContainer: {
     width: '100%',
     height: '220px',
-    backgroundColor: 'var(--fundo-branco)',
+    backgroundColor: '#ffffff',
     borderRadius: '8px',
     overflow: 'hidden',
-    border: '1px solid var(--input-bg)',
+    border: '2px solid var(--input-bg)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',

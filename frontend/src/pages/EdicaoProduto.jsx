@@ -76,18 +76,21 @@ export default function EdicaoProduto() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validação de EAN-13 (Exatamente 13 números)
-    const eanRegex = /^\d{13}$/;
-    if (!eanRegex.test(formData.codigo_barras)) {
-      alert('O Código de Barras deve conter exatamente 13 dígitos numéricos (padrão EAN-13).');
-      return;
+    // Validação de EAN-13 apenas SE o campo for preenchido
+    if (formData.codigo_barras && formData.codigo_barras.trim() !== '') {
+      const eanRegex = /^\d{13}$/;
+      if (!eanRegex.test(formData.codigo_barras)) {
+        alert('O Código de Barras deve conter exatamente 13 dígitos numéricos (padrão EAN-13).');
+        return;
+      }
     }
 
     setSalvando(true);
 
     try {
       await api.put(`/produtos/${id}`, {
-        ...formData,
+        nome: formData.nome,
+        codigo_barras: formData.codigo_barras?.trim() ? formData.codigo_barras.trim() : null,
         quantidade_estoque: Number(formData.quantidade_estoque) || 0,
         data_validade: formData.data_validade ? formData.data_validade : null,
         categoria: formData.categoria ? formData.categoria : null,
@@ -124,7 +127,7 @@ export default function EdicaoProduto() {
       <main style={styles.container}>
         <div style={styles.card}>
           <div style={styles.headerForm}>
-            <h1 style={styles.title}>EDITAR PRODUTO</h1>
+            <h1 style={styles.title}>Editar Produto</h1>
             <p style={styles.subtitle}>Altere as informações necessárias e clique em Salvar.</p>
           </div>
 
@@ -132,7 +135,7 @@ export default function EdicaoProduto() {
             {/* Linha 1: Nome e Código de Barras */}
             <div style={styles.row}>
               <div style={styles.group}>
-                <label style={styles.label}>NOME DO PRODUTO *</label>
+                <label style={styles.label}>Nome do Produto *</label>
                 <input
                   type="text"
                   name="nome"
@@ -144,11 +147,10 @@ export default function EdicaoProduto() {
               </div>
 
               <div style={styles.group}>
-                <label style={styles.label}>CÓDIGO DE BARRAS (EAN) *</label>
+                <label style={styles.label}>Código de Barras (EAN)</label>
                 <input
                   type="text"
                   name="codigo_barras"
-                  required
                   value={formData.codigo_barras}
                   onChange={handleChange}
                   style={styles.input}
@@ -159,10 +161,11 @@ export default function EdicaoProduto() {
             {/* Linha 2: Categoria, Estoque e Validade */}
             <div style={styles.rowThree}>
               <div style={styles.group}>
-                <label style={styles.label}>CATEGORIA</label>
+                <label style={styles.label}>Categoria *</label>
                 <input
                   type="text"
                   name="categoria"
+                  required
                   value={formData.categoria}
                   onChange={handleChange}
                   style={styles.input}
@@ -170,11 +173,10 @@ export default function EdicaoProduto() {
               </div>
 
               <div style={styles.group}>
-                <label style={styles.label}>QUANTIDADE EM ESTOQUE *</label>
+                <label style={styles.label}>Quantidade em Estoque</label>
                 <input
                   type="number"
                   name="quantidade_estoque"
-                  required
                   min="0"
                   value={formData.quantidade_estoque}
                   onChange={handleChange}
@@ -183,7 +185,7 @@ export default function EdicaoProduto() {
               </div>
 
               <div style={styles.group}>
-                <label style={styles.label}>DATA DE VALIDADE</label>
+                <label style={styles.label}>Data de Validade</label>
                 <input
                   type="date"
                   name="data_validade"
@@ -196,7 +198,7 @@ export default function EdicaoProduto() {
 
             {/* Linha 3: URL da Imagem */}
             <div style={styles.group}>
-              <label style={styles.label}>URL DA IMAGEM DO PRODUTO</label>
+              <label style={styles.label}>URL da Imagem do Produto</label>
               <input
                 type="url"
                 name="imagem_url"
@@ -208,10 +210,11 @@ export default function EdicaoProduto() {
 
             {/* Linha 4: Descrição */}
             <div style={styles.group}>
-              <label style={styles.label}>DESCRIÇÃO DETALHADA</label>
+              <label style={styles.label}>Descrição *</label>
               <textarea
                 name="descricao"
                 rows="3"
+                required
                 value={formData.descricao}
                 onChange={handleChange}
                 style={{ ...styles.input, resize: 'vertical' }}
