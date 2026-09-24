@@ -183,10 +183,11 @@ export default function Fornecedores() {
 
             <div style={styles.rowThree}>
               <div style={styles.group}>
-                <label style={styles.label}>Telefone</label>
+                <label style={styles.label}>Telefone *</label>
                 <input
                   type="text"
                   name="telefone"
+                  required
                   placeholder="(11) 99999-9999"
                   value={formData.telefone}
                   onChange={handleChange}
@@ -195,10 +196,11 @@ export default function Fornecedores() {
               </div>
 
               <div style={styles.group}>
-                <label style={styles.label}>Email de Contato</label>
+                <label style={styles.label}>Email de Contato *</label>
                 <input
                   type="email"
                   name="email"
+                  required
                   placeholder="contato@fornecedor.com"
                   value={formData.email}
                   onChange={handleChange}
@@ -207,10 +209,11 @@ export default function Fornecedores() {
               </div>
 
               <div style={styles.group}>
-                <label style={styles.label}>Contato Principal</label>
+                <label style={styles.label}>Contato Principal *</label>
                 <input
                   type="text"
                   name="contato_principal"
+                  required
                   placeholder="Ex: Carlos Oliveira"
                   value={formData.contato_principal}
                   onChange={handleChange}
@@ -220,10 +223,11 @@ export default function Fornecedores() {
             </div>
 
             <div style={styles.group}>
-              <label style={styles.label}>Endereço Completo</label>
+              <label style={styles.label}>Endereço Completo *</label>
               <input
                 type="text"
                 name="endereco"
+                required
                 placeholder="Av. Paulista, 1000 - São Paulo/SP"
                 value={formData.endereco}
                 onChange={handleChange}
