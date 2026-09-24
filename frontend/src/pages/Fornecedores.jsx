@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import Header from "../components/Header";
-import api from "../services/api";
+import { useEffect, useState } from 'react';
+import Header from '../components/Header';
+import api from '../services/api';
 
 export default function Fornecedores() {
   const [fornecedores, setFornecedores] = useState([]);
@@ -13,17 +13,16 @@ export default function Fornecedores() {
     endereco: '',
     telefone: '',
     email: '',
-    contato_principal: '',
+    contato_principal: ''
   });
 
-  //Busca lista de fornecedores
   const carregarFornecedores = async () => {
-    try{
+    try {
       const resposta = await api.get('/fornecedores');
       setFornecedores(resposta.data);
     } catch (erro) {
       console.error("Erro ao carregar fornecedores:", erro);
-    }finally{
+    } finally {
       setCarregando(false);
     }
   };
@@ -32,20 +31,20 @@ export default function Fornecedores() {
     let ativo = true;
 
     const buscarDados = async () => {
-      try{
+      try {
         const resposta = await api.get('/fornecedores');
-        if(ativo) {
-          setFornecedores(resposta.data)
+        if (ativo) {
+          setFornecedores(resposta.data);
         }
       } catch (erro) {
         console.error("Erro ao carregar fornecedores:", erro);
-      }finally{
-        if(ativo){
+      } finally {
+        if (ativo) {
           setCarregando(false);
         }
       }
     };
-    
+
     buscarDados();
 
     return () => {
@@ -54,7 +53,7 @@ export default function Fornecedores() {
   }, []);
 
   const handleChange = (e) => {
-    const {name, value} = e.target;
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value
@@ -64,32 +63,29 @@ export default function Fornecedores() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    //1.Limpa o CNPJ (remove pontuações e converte letras para maiúsculas)
+    // 1. Limpa o CNPJ (aceita alfanumérico novo e numérico antigo)
     const cnpjLimpo = formData.cnpj.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-
-    //2.Valida se possui exatamente 14 caracteres no formato alfanumérico ou numérico
-    //(12 caracteres alfanuméricos + 2 digitos finais numéricos)
     const cnpjRegex = /^[A-Z0-9]{12}\d{2}$/;
 
-    if(!cnpjRegex.test(cnpjLimpo)) {
+    if (!cnpjRegex.test(cnpjLimpo)) {
       alert('CNPJ inválido. O CNPJ deve conter 14 caracteres (os 12 primeiros podendo ser letras/números e os 2 últimos obrigatoriamente números).');
       return;
     }
 
-    //3.Validação de E-mail
-    if(formData.email){
+    // 2. Validação de E-mail
+    if (formData.email) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if(!emailRegex.test(formData.email)){
-        alert('Por favor, insira um e-mail válido (ex: contato@empresa.com).');
+      if (!emailRegex.test(formData.email)) {
+        alert('Por favor, insira um e-mail válido.');
         return;
       }
     }
 
-    //4.Validação de Telefone (DDD + 8 ou 9 digitos)
-    if(formData.telefone){
+    // 3. Validação de Telefone
+    if (formData.telefone) {
       const telefoneApenasNumeros = formData.telefone.replace(/\D/g, '');
-      if(telefoneApenasNumeros.length < 10 || telefoneApenasNumeros.length > 11){
-        alert('O telefone deve conter DDD + número (10 ou 11 dígitos). Ex: 11999998888');
+      if (telefoneApenasNumeros.length < 10 || telefoneApenasNumeros.length > 11) {
+        alert('O telefone deve conter DDD + número (10 ou 11 dígitos).');
         return;
       }
     }
@@ -103,167 +99,189 @@ export default function Fornecedores() {
         endereco: formData.endereco || null,
         telefone: formData.telefone || null,
         email: formData.email || null,
-        contato_principal: formData.contato_principal || null,
+        contato_principal: formData.contato_principal || null
       });
 
-      alert('Forncedor cadastrado com sucesso!');
+      alert('Fornecedor cadastrado com sucesso!');
 
-      //Limpa formulário e recarrega a tabela
       setFormData({
         nome_empresa: '',
         cnpj: '',
         endereco: '',
         telefone: '',
         email: '',
-        contato_principal: '',
+        contato_principal: ''
       });
 
       carregarFornecedores();
     } catch (erro) {
       console.error("Erro ao cadastrar fornecedor:", erro);
-      const msg = erro.response?.data?.erro || 'Erro ao cadastrar fonecedor. Verifique se o CNPJ já está cadastrado.';
+      const msg = erro.response?.data?.erro || 'Erro ao cadastrar fornecedor. Verifique se o CNPJ já está cadastrado.';
       alert(msg);
-    }finally{
+    } finally {
       setSalvando(false);
     }
   };
 
+  // Função para Excluir Fornecedor
+  const handleExcluirFornecedor = async (id, nomeEmpresa) => {
+    const confirmar = window.confirm(
+      `Tem certeza que deseja EXCLUIR o fornecedor "${nomeEmpresa}"?\n\nIsso também desvinculará este fornecedor de qualquer produto associado.`
+    );
+    if (!confirmar) return;
+
+    try {
+      await api.delete(`/fornecedores/${id}`);
+      alert('Fornecedor excluído com sucesso!');
+      carregarFornecedores(); // Atualiza a tabela
+    } catch (erro) {
+      console.error('Erro ao excluir fornecedor:', erro);
+      alert('Erro ao excluir o fornecedor do banco de dados.');
+    }
+  };
+
   return (
-    <div style={{backgroundColor: 'var(--fundo-branco)', minHeight: '100vh'}}>
-      <Header/>
+    <div style={{ backgroundColor: 'var(--fundo-branco)', minHeight: '100vh' }}>
+      <Header />
 
       <main style={styles.container}>
-        {/*Bloco 1: Formulário de Cadastro */}
+        {/* Bloco 1: Formulário de Cadastro */}
         <section style={styles.card}>
           <div style={styles.headerForm}>
             <h1 style={styles.title}>Cadastrar Novo Fornecedor</h1>
-            <p style={styles.subtitle}>Regitre os dados do parceiro comercial para vinculá-lo aos produtos</p>
+            <p style={styles.subtitle}>Registre os dados do parceiro comercial para vinculá-lo aos produtos.</p>
           </div>
 
           <form onSubmit={handleSubmit} style={styles.form}>
             <div style={styles.row}>
               <div style={styles.group}>
-                <label style={styles.label}>Nome da Empresa *</label>
-                <input 
+                <label style={styles.label}>Nome / Razão Social *</label>
+                <input
                   type="text"
                   name="nome_empresa"
                   required
-                  placeholder="Insira o nome da empresa"
+                  placeholder="Ex: Tech Distribuidora Ltda"
                   value={formData.nome_empresa}
                   onChange={handleChange}
-                  style={styles.input} 
+                  style={styles.input}
                 />
               </div>
 
               <div style={styles.group}>
                 <label style={styles.label}>CNPJ *</label>
-                <input 
+                <input
                   type="text"
                   name="cnpj"
                   required
                   placeholder="00.000.000/0001-00"
                   value={formData.cnpj}
                   onChange={handleChange}
-                  style={styles.input} 
+                  style={styles.input}
                 />
               </div>
             </div>
 
             <div style={styles.rowThree}>
               <div style={styles.group}>
-                <label style={styles.label}>Telefone *</label>
-                <input 
+                <label style={styles.label}>Telefone</label>
+                <input
                   type="text"
                   name="telefone"
-                  required
-                  placeholder="(00) 00000-0000"
+                  placeholder="(11) 99999-9999"
                   value={formData.telefone}
                   onChange={handleChange}
-                  style={styles.input} 
+                  style={styles.input}
                 />
               </div>
 
               <div style={styles.group}>
-                <label style={styles.label}>Email *</label>
-                <input 
+                <label style={styles.label}>Email de Contato</label>
+                <input
                   type="email"
                   name="email"
-                  required
-                  placeholder="exemplo@fornecedor.com"
+                  placeholder="contato@fornecedor.com"
                   value={formData.email}
                   onChange={handleChange}
-                  style={styles.input} 
+                  style={styles.input}
                 />
               </div>
 
               <div style={styles.group}>
-                <label style={styles.label}>Contato Principal *</label>
-                <input 
+                <label style={styles.label}>Contato Principal</label>
+                <input
                   type="text"
                   name="contato_principal"
-                  required
-                  placeholder="Nome do contato principal"
+                  placeholder="Ex: Carlos Oliveira"
                   value={formData.contato_principal}
                   onChange={handleChange}
-                  style={styles.input} 
+                  style={styles.input}
                 />
               </div>
             </div>
 
             <div style={styles.group}>
-                <label style={styles.label}>Endereço *</label>
-                <input 
-                  type="text"
-                  name="endereco"
-                  required
-                  placeholder="Insira o endereço completo da empresa"
-                  value={formData.endereco}
-                  onChange={handleChange}
-                  style={styles.input} 
-                />
-              </div>
+              <label style={styles.label}>Endereço Completo</label>
+              <input
+                type="text"
+                name="endereco"
+                placeholder="Av. Paulista, 1000 - São Paulo/SP"
+                value={formData.endereco}
+                onChange={handleChange}
+                style={styles.input}
+              />
+            </div>
 
-              <div style={styles.buttonContainer}>
-                <button
-                  type="submit"
-                  disabled={salvando}
-                  style={styles.btnSalvar}
-                >
-                  {salvando ? 'Salvando...' : 'Cadastrar Fornecedor'}
-                </button>
-              </div>
+            <div style={styles.buttonContainer}>
+              <button
+                type="submit"
+                disabled={salvando}
+                style={styles.btnSalvar}
+              >
+                {salvando ? 'Salvando...' : 'Cadastrar Fornecedor'}
+              </button>
+            </div>
           </form>
         </section>
 
-        {/*Bloco 2: Lista de Fornecedores*/}
-        <section style={{marginTop: '40px'}}>
-          <h2 style={{...styles.title, marginBottom: '16px'}}>Fornecedores Cadastrados</h2>
+        {/* Bloco 2: Lista de Fornecedores */}
+        <section style={{ marginTop: '40px' }}>
+          <h2 style={{ ...styles.title, marginBottom: '16px' }}>FORNECEDORES CADASTRADOS</h2>
 
           {carregando ? (
-            <p style={{color: 'var(--texto-preto)'}}>Carregando fornecedores...</p>
+            <p style={{ color: 'var(--texto-preto)' }}>Carregando fornecedores...</p>
           ) : fornecedores.length === 0 ? (
             <div style={styles.cardVazio}>
-              <p style={{color: 'var(--texto-preto)'}}>Nenhum fornecedor cadastrado ainda.</p>
+              <p style={{ color: 'var(--texto-preto)' }}>Nenhum fornecedor cadastrado ainda.</p>
             </div>
           ) : (
             <table style={styles.table}>
               <thead>
                 <tr style={styles.trHeader}>
-                  <th style={styles.th}>Empresa</th>
+                  <th style={styles.th}>EMPRESA</th>
                   <th style={styles.th}>CNPJ</th>
-                  <th style={styles.th}>Telefone</th>
-                  <th style={styles.th}>Email</th>
-                  <th style={styles.th}>Contato</th>
+                  <th style={styles.th}>TELEFONE</th>
+                  <th style={styles.th}>E-MAIL</th>
+                  <th style={styles.th}>CONTATO</th>
+                  <th style={styles.thCenter}>AÇÃO</th>
                 </tr>
               </thead>
               <tbody>
                 {fornecedores.map((fornecedor) => (
                   <tr key={fornecedor.id} style={styles.tr}>
-                    <td style={{...styles.td, fontWeight: '600'}}>{fornecedor.nome_empresa}</td>
+                    <td style={{ ...styles.td, fontWeight: '600' }}>{fornecedor.nome_empresa}</td>
                     <td style={styles.td}>{fornecedor.cnpj}</td>
-                    <td style={styles.td}>{fornecedor.telefone}</td>
-                    <td style={styles.td}>{fornecedor.email}</td>
-                    <td style={styles.td}>{fornecedor.contato_principal}</td>
+                    <td style={styles.td}>{fornecedor.telefone || '-'}</td>
+                    <td style={styles.td}>{fornecedor.email || '-'}</td>
+                    <td style={styles.td}>{fornecedor.contato_principal || '-'}</td>
+                    <td style={styles.tdCenter}>
+                      <button
+                        type="button"
+                        onClick={() => handleExcluirFornecedor(fornecedor.id, fornecedor.nome_empresa)}
+                        style={styles.btnExcluir}
+                      >
+                        ✕ Excluir
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -382,6 +400,13 @@ const styles = {
     fontFamily: 'var(--font-header-btn)',
     letterSpacing: '0.5px'
   },
+  thCenter: {
+    padding: '16px',
+    textAlign: 'center',
+    fontSize: '0.85rem',
+    fontFamily: 'var(--font-header-btn)',
+    letterSpacing: '0.5px'
+  },
   tr: {
     borderBottom: '1px solid var(--input-bg)'
   },
@@ -389,5 +414,19 @@ const styles = {
     padding: '16px',
     color: 'var(--texto-preto)',
     fontSize: '0.95rem'
+  },
+  tdCenter: {
+    padding: '16px',
+    textAlign: 'center'
+  },
+  btnExcluir: {
+    backgroundColor: '#fff1f0',
+    color: '#e53e3e',
+    border: '1px solid #ffa39e',
+    padding: '6px 14px',
+    borderRadius: '4px',
+    fontSize: '0.8rem',
+    fontWeight: 'bold',
+    cursor: 'pointer'
   }
 };

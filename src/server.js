@@ -169,6 +169,27 @@ app.delete('/produtos/:id/fornecedores/:fornecedorId', async (req, res) => {
     }
 });
 
+// Excluir fornecedor (Tela 3)
+app.delete('/fornecedores/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        // 1. Remove os vínculos deste fornecedor na tabela N:N com os produtos
+        await db.query('DELETE FROM produto_fornecedores WHERE fornecedor_id = $1', [id]);
+
+        // 2. Remove o fornecedor da tabela de fornecedores
+        const resultado = await db.query('DELETE FROM fornecedores WHERE id = $1', [id]);
+
+        if (resultado.rowCount === 0) {
+            return res.status(404).json({ erro: "Fornecedor não encontrado." });
+        }
+
+        res.json({ mensagem: "Fornecedor excluído com sucesso!" });
+    } catch (erro) {
+        console.error("Erro ao excluir fornecedor:", erro);
+        res.status(500).json({ erro: "Erro ao excluir fornecedor do banco de dados." });
+    }
+});
+
 // Excluir PRODUTO completo (Apaga vínculos primeiro e depois o produto)
 app.delete('/produtos/:id', async (req, res) => {
     const { id } = req.params;
