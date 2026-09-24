@@ -69,6 +69,38 @@ app.post('/produtos', async (req, res) => {
     }
 });
 
+//Editar produto existente (Tela extra de edição)
+// Editar produto existente (Tela de Edição)
+app.put('/produtos/:id', async (req, res) => {
+    const { id } = req.params;
+    const { nome, codigo_barras, descricao, quantidade_estoque, categoria, data_validade, imagem_url } = req.body;
+
+    try {
+        const resultado = await db.query(
+            `UPDATE produtos 
+             SET nome = $1, 
+                 codigo_barras = $2, 
+                 descricao = $3, 
+                 quantidade_estoque = $4, 
+                 categoria = $5, 
+                 data_validade = $6, 
+                 imagem_url = $7 
+             WHERE id = $8 
+             RETURNING *`,
+            [nome, codigo_barras, descricao, quantidade_estoque, categoria, data_validade, imagem_url, id]
+        );
+
+        if (resultado.rows.length === 0) {
+            return res.status(404).json({ erro: "Produto não encontrado." });
+        }
+
+        res.json(resultado.rows[0]);
+    } catch (erro) {
+        console.error("Erro ao atualizar produto:", erro);
+        res.status(400).json({ erro: "Erro ao atualizar produto. Verifique se o Código de Barras já pertence a outro produto." });
+    }
+});
+
 //Detalhes do produto + fornecedores associados (tela 4)
 app.get('/produtos/:id', async (req, res) => {
     const { id } = req.params;

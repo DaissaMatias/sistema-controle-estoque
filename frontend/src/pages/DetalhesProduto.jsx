@@ -11,7 +11,7 @@ export default function DetalhesProduto() {
   const [fornecedoresAssociados, setFornecedoresAssociados] = useState([]);
   const [todosFornecedores, setTodosFornecedores] = useState([]);
   const [fornecedorSelecionadoId, setFornecedorSelecionadoId] = useState('');
-  
+
   const [carregando, setCarregando] = useState(true);
   const [associando, setAssociando] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
@@ -33,7 +33,7 @@ export default function DetalhesProduto() {
         if (ativo) {
           setProduto(resProduto.data.produto);
           setFornecedoresAssociados(resProduto.data.fornecedores_associados || []);
-          
+
           if (Array.isArray(resTodosFornecedores.data)) {
             setTodosFornecedores(resTodosFornecedores.data);
           }
@@ -145,13 +145,22 @@ export default function DetalhesProduto() {
             ← VOLTAR PARA PRODUTOS
           </button>
 
-          <button 
-            onClick={handleExcluirProduto} 
-            disabled={excluindo}
-            style={styles.btnExcluirProduto}
-          >
-            {excluindo ? 'EXCLUINDO...' : '🗑️ EXCLUIR PRODUTO'}
-          </button>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button
+              onClick={() => navigate(`/produtos/${id}/editar`)}
+              style={styles.btnEditarProduto}
+            >
+              ✏️ Editar Produto
+            </button>
+
+            <button
+              onClick={handleExcluirProduto}
+              disabled={excluindo}
+              style={styles.btnExcluirProduto}
+            >
+              {excluindo ? 'EXCLUINDO...' : '🗑️ EXCLUIR PRODUTO'}
+            </button>
+          </div>
         </div>
 
         {/* DETALHES DO PRODUTO */}
@@ -159,9 +168,9 @@ export default function DetalhesProduto() {
           <div style={styles.productLayout}>
             <div style={styles.imageContainer}>
               {produto.imagem_url && !erroImagem ? (
-                <img 
-                  src={produto.imagem_url} 
-                  alt={produto.nome} 
+                <img
+                  src={produto.imagem_url}
+                  alt={produto.nome}
                   referrerPolicy="no-referrer"
                   style={styles.productImage}
                   onError={() => setErroImagem(true)}
@@ -196,8 +205,8 @@ export default function DetalhesProduto() {
                 <div style={styles.infoBox}>
                   <span style={styles.infoLabel}>DATA DE VALIDADE</span>
                   <p style={styles.infoValue}>
-                    {produto.data_validade 
-                      ? new Date(produto.data_validade).toLocaleDateString('pt-BR') 
+                    {produto.data_validade
+                      ? new Date(produto.data_validade).toLocaleDateString('pt-BR')
                       : 'Não aplicável / Não informada'}
                   </p>
                 </div>
@@ -237,9 +246,9 @@ export default function DetalhesProduto() {
               </select>
             </div>
 
-            <button 
-              type="submit" 
-              disabled={associando} 
+            <button
+              type="submit"
+              disabled={associando}
               style={styles.btnVincular}
             >
               {associando ? 'VINCULANDO...' : '+ VINCULAR FORNECEDOR'}
@@ -533,5 +542,16 @@ const styles = {
     fontSize: '0.8rem',
     fontWeight: 'bold',
     cursor: 'pointer'
-  }
+  },
+  btnEditarProduto: {
+    backgroundColor: 'var(--fundo-branco)',
+    color: 'var(--azul-escuro)',
+    border: '1px solid var(--azul-claro)',
+    padding: '8px 16px',
+    borderRadius: '6px',
+    fontSize: '0.85rem',
+    fontFamily: 'var(--font-header-btn)',
+    fontWeight: 'bold',
+    cursor: 'pointer'
+  },
 };
